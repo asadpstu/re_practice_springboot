@@ -92,4 +92,13 @@ public class ProductService {
     public List<String> getCategories() {
         return productRepository.getCategories();
     }
+
+    public Boolean deleteProduct(Long productId) {
+        var product = productRepository.findById(productId).orElse(null);
+        if (product == null) {
+            return false;
+        }
+        productRepository.deleteById(productId);
+        return true;
+    }
 }

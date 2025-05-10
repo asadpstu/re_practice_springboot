@@ -86,4 +86,19 @@ public class ProductController {
         List<String> categories  =  productService.getCategories();
         return new ResponseEntity<>(categories, HttpStatus.OK);
     }
+
+    @DeleteMapping("/product/{productId}")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Boolean> deleteProduct(@PathVariable Long productId) {
+        try {
+            var  result =  productService.deleteProduct(productId);
+            if (result) {
+                return new ResponseEntity<>(result, HttpStatus.NO_CONTENT);
+            } else {
+                return new ResponseEntity<>(false, HttpStatus.MOVED_PERMANENTLY);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }
