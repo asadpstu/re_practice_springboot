@@ -1,5 +1,7 @@
-package com.example.practice_application.model;
+package com.example.practice_application.dto;
 
+import com.example.practice_application.model.Product;
+import com.example.practice_application.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,29 +12,16 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Cart {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class CartResponseDto {
     private Long id;
     private int quantity;
     private BigDecimal price;
-    private BigDecimal total_price;
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    @UpdateTimestamp
+    private BigDecimal totalPrice;
     private LocalDateTime updatedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
 }

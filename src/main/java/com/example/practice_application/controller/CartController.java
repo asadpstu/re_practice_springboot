@@ -1,6 +1,7 @@
 package com.example.practice_application.controller;
 
 import com.example.practice_application.dto.CartDto;
+import com.example.practice_application.dto.CartResponseDto;
 import com.example.practice_application.jwt.JWTService;
 import com.example.practice_application.model.Cart;
 import com.example.practice_application.model.User;
@@ -27,12 +28,13 @@ public class CartController {
 
     @PostMapping("/cart/add")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<Cart> addCart(HttpServletRequest request, @RequestBody CartDto cartPayload) {
+    public ResponseEntity<CartResponseDto> addCart(HttpServletRequest request, @RequestBody CartDto cartPayload) {
         try {
-            Cart cart =  cartService.addCart(request, cartPayload);
+            CartResponseDto cart =  cartService.addCart(request, cartPayload);
             return new ResponseEntity<>(cart, HttpStatus.CREATED);
         }
         catch (Exception e) {
+            System.out.println(e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
