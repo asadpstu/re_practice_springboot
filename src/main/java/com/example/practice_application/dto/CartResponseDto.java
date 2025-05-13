@@ -21,7 +21,6 @@ public class CartResponseDto {
     private BigDecimal price;
     private BigDecimal totalPrice;
     private LocalDateTime updatedAt;
-    private User user;
     private Product product;
 
 }

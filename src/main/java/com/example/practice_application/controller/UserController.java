@@ -1,4 +1,5 @@
 package com.example.practice_application.controller;
+import com.example.practice_application.Utils.TokenValidation;
 import com.example.practice_application.dto.UserRequestDto;
 import com.example.practice_application.dto.UserResponseDto;
 import com.example.practice_application.model.User;
@@ -36,6 +37,9 @@ public class UserController {
 
     @Autowired
     private JWTService jwtService;
+
+    @Autowired
+    private TokenValidation tokenValidation;
 
     @GetMapping("")
     public ResponseEntity<String> empty(HttpServletRequest request) {
@@ -90,18 +94,7 @@ public class UserController {
     @GetMapping("/user/me")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<User> getCurrentUser(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
-
-        String token = authHeader.substring(7);
-        if (!jwtService.validateToken(token)) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
-
-        String username = jwtService.extractUserName(token);
-        User user = userService.getUserByUserName(username);
+        User user = tokenValidation.extractUserFromRequest(request);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 

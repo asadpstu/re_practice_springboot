@@ -1,5 +1,6 @@
 package com.example.practice_application.service;
 
+import com.example.practice_application.Utils.TokenValidation;
 import com.example.practice_application.dto.CartDto;
 import com.example.practice_application.dto.CartResponseDto;
 import com.example.practice_application.jwt.JWTService;
@@ -11,14 +12,19 @@ import com.example.practice_application.repository.ProductRepository;
 import com.example.practice_application.repository.UserRepository;
 import jakarta.persistence.Id;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.token.TokenService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class CartService {
     @Autowired
     private CartRepository cartRepository;
@@ -28,52 +34,78 @@ public class CartService {
     private ProductRepository productRepository;
 
     @Autowired
-    private UserService userService;
+    private TokenValidation tokenValidation;
 
-    @Autowired
-    private JWTService jwtService;
 
-    public CartResponseDto addCart(HttpServletRequest request,  CartDto cartPayload) {
-        String token =  request.getHeader("Authorization").substring(7);
-        String username = jwtService.extractUserName(token);
-        User user = userService.getUserByUserName(username);
-        Optional<Product> product = productRepository.findById(cartPayload.getProduct_id());
 
-        if (user == null  || product.isEmpty()) {
-            throw new IllegalArgumentException("Invalid user or product ID");
+    public List<CartResponseDto> addCart(HttpServletRequest request, CartDto cartPayload) {
+        User user = tokenValidation.extractUserFromRequest(request);
+        Product product = getProductById(cartPayload.getProduct_id());
+        if(product == null){
+            throw new RuntimeException("Product not found");
         }
 
-        /* Check if there is existing cart for same product and user */
         Cart existingCart = cartRepository.findByUserAndProduct(user, product);
         if (existingCart != null) {
-            existingCart.setQuantity(cartPayload.getQuantity() + existingCart.getQuantity());
-            existingCart.setPrice(product.get().getPrice());
-            existingCart.setTotal_price(product.get().getPrice().multiply(BigDecimal.valueOf(existingCart.getQuantity())));
-            var updatedCart = cartRepository.save(existingCart);
-            return cartResponse(updatedCart);
-        }
-        else {
+            existingCart.setQuantity(existingCart.getQuantity() + cartPayload.getQuantity());
+            existingCart.setPrice(product.getPrice());
+            existingCart.setTotal_price(product.getPrice().multiply(BigDecimal.valueOf(existingCart.getQuantity())));
+            cartRepository.save(existingCart);
+        } else {
             Cart newCart = new Cart();
             newCart.setUser(user);
-            newCart.setProduct(product.get());
+            newCart.setProduct(product);
             newCart.setQuantity(cartPayload.getQuantity());
-            newCart.setPrice(product.get().getPrice());
-            newCart.setTotal_price(product.get().getPrice().multiply(BigDecimal.valueOf(cartPayload.getQuantity())));
-            var addedCart = cartRepository.save(newCart);
-            return cartResponse(addedCart);
+            newCart.setPrice(product.getPrice());
+            newCart.setTotal_price(product.getPrice().multiply(BigDecimal.valueOf(cartPayload.getQuantity())));
+            cartRepository.save(newCart);
         }
+
+        List<Cart> carts = cartRepository.findAllByUserId(user.getId());
+        return carts.stream().map(this::mapToCartResponseDto).collect(Collectors.toList());
+    }
+
+    public List<CartResponseDto> changeCartQuantity(HttpServletRequest request, CartDto cartPayload) {
+        User user = tokenValidation.extractUserFromRequest(request);
+        Product product = getProductById(cartPayload.getProduct_id());
+
+        if (cartPayload.getQuantity() == 0) {
+            cartRepository.deleteCartByUserAndProduct(user, product);
+        } else {
+            Cart existingCart = cartRepository.findByUserAndProduct(user, product);
+            if (existingCart != null) {
+                existingCart.setQuantity(cartPayload.getQuantity());
+                existingCart.setPrice(product.getPrice());
+                existingCart.setTotal_price(product.getPrice().multiply(BigDecimal.valueOf(cartPayload.getQuantity())));
+                cartRepository.save(existingCart);
+            }
+        }
+
+        List<Cart> carts = cartRepository.findAllByUserId(user.getId());
+        return carts.stream().map(this::mapToCartResponseDto).collect(Collectors.toList());
     }
 
 
-    private CartResponseDto cartResponse(Cart cart) {
-        CartResponseDto cartResponseDto = new CartResponseDto();
-        cartResponseDto.setId(cart.getId());
-        cartResponseDto.setProduct(cart.getProduct());
-        cartResponseDto.setUser(cart.getUser());
-        cartResponseDto.setQuantity(cart.getQuantity());
-        cartResponseDto.setPrice(cart.getPrice());
-        cartResponseDto.setTotalPrice(cart.getTotal_price());
-        cartResponseDto.setUpdatedAt(cart.getUpdatedAt());
-        return cartResponseDto;
+
+    private Product getProductById(Long productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid product ID"));
+    }
+
+    private CartResponseDto mapToCartResponseDto(Cart cart) {
+        CartResponseDto dto = new CartResponseDto();
+        dto.setId(cart.getId());
+        dto.setProduct(cart.getProduct());
+        dto.setQuantity(cart.getQuantity());
+        dto.setPrice(cart.getPrice());
+        dto.setTotalPrice(cart.getTotal_price());
+        dto.setUpdatedAt(cart.getUpdatedAt());
+        return dto;
+    }
+
+    public List<CartResponseDto> myCartList(HttpServletRequest request) {
+        User user = tokenValidation.extractUserFromRequest(request);
+        List<Cart> carts = cartRepository.findAllByUserId(user.getId());
+        return carts.stream().map(this::mapToCartResponseDto).collect(Collectors.toList());
     }
 }

@@ -17,6 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 @CrossOrigin
@@ -25,18 +29,30 @@ public class CartController {
     @Autowired
     private CartService cartService;
 
-
     @PostMapping("/cart/add")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<CartResponseDto> addCart(HttpServletRequest request, @RequestBody CartDto cartPayload) {
+    public ResponseEntity<?> addCart(HttpServletRequest request, @RequestBody CartDto cartPayload) {
         try {
-            CartResponseDto cart =  cartService.addCart(request, cartPayload);
+            List<CartResponseDto> cart = cartService.addCart(request, cartPayload);
             return new ResponseEntity<>(cart, HttpStatus.CREATED);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
-        catch (Exception e) {
-            System.out.println(e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+    }
 
+    @PutMapping("/cart/change/quantity")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<List<CartResponseDto>> changeCartQuantity(HttpServletRequest request, @RequestBody CartDto cartPayload) {
+        List<CartResponseDto> cart =  cartService.changeCartQuantity(request, cartPayload);
+        return new ResponseEntity<>(cart, HttpStatus.OK);
+    }
+
+    @GetMapping("/cart/me")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<List<CartResponseDto>> myCartList(HttpServletRequest request) {
+        List<CartResponseDto> cart =  cartService.myCartList(request);
+        return new ResponseEntity<>(cart, HttpStatus.OK);
     }
 }

@@ -50,7 +50,8 @@ public class SecurityConfig {
                         "swagger-ui/index.html",
                         "swagger-ui/index.html#/**",
                         "api/product/search",
-                        "api/product/categories"
+                        "api/product/categories",
+                        "api/orders"
                 )
                 .permitAll().anyRequest().authenticated());
         http.httpBasic(Customizer.withDefaults());
