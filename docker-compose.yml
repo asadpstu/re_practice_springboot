@@ -1,0 +1,24 @@
+version: "3.7"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - my-network
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: asad
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: practice
+    ports:
+      - "5432:5432"
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
