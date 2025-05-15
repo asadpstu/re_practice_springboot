@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: practice-application
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://postgres:5432/practice
+    username: asad
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+server:
+  port: 8080
+imgbb:
+  api:
+    key: ${IMGBBKEY}
